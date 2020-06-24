@@ -27,16 +27,17 @@ f b b b 1 1 1 1 1 1 1 1 b b b b b c c c c c c c b b c f . . . .
     sprites.setDataNumber(boss, "hp", bossMaxHp)
     bossSpawned = true
     bossInvulnerable = false
+    cubicbird.displayHitPointBar(sprites.readDataNumber(boss, "hp") / bossMaxHp * 100)
 }
-sprites.onOverlap(SpriteKind.Player, SpriteKind.EnemyProjectile, function (sprite, otherSprite) {
-    damageToPlayer()
-})
 function damageToPlayer () {
     scene.cameraShake(4, 500)
     spritelives.ghostModeFor(aircraft, 1000)
     aircraft.startEffect(effects.fire, 500)
     info.changeLifeBy(-1)
 }
+sprites.onOverlap(SpriteKind.Player, SpriteKind.EnemyProjectile, function (sprite, otherSprite) {
+    damageToPlayer()
+})
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Boss, function (sprite, otherSprite) {
     damageToPlayer()
 })
@@ -71,7 +72,7 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, oth
     otherSprite.startEffect(effects.ashes, 200)
     sprite.destroy()
     sprites.changeDataNumberBy(otherSprite, "hp", -1)
-    cubicbird.displaySpriteHitPointBar(otherSprite, sprites.readDataNumber(otherSprite, "hp") / 3 * 100)
+    cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / 3 * 100, otherSprite)
     if (sprites.readDataNumber(otherSprite, "hp") == 0) {
         info.changeScoreBy(1)
         otherSprite.destroy()
@@ -258,11 +259,11 @@ function spawnEnemy () {
 . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . 
 `, SpriteKind.Enemy)
-    newEnemy.setFlag(SpriteFlag.DestroyOnWall, true)
+    newEnemy.setFlag(SpriteFlag.AutoDestroy, true)
     newEnemy.setPosition(140, Math.randomRange(10, 110))
     newEnemy.setVelocity(-50, 0)
     sprites.setDataNumber(newEnemy, "hp", 3)
-    cubicbird.displaySpriteHitPointBar(newEnemy, sprites.readDataNumber(newEnemy, "hp") / 3 * 100)
+    cubicbird.displayHitPointBar(sprites.readDataNumber(newEnemy, "hp") / 3 * 100, newEnemy)
 }
 function bossNormalAnimation () {
     animation.runImageAnimation(
@@ -504,14 +505,14 @@ aircraft.setPosition(15, 20)
 aircraft.setFlag(SpriteFlag.StayInScreen, true)
 info.setLife(3)
 game.onUpdateInterval(2000, function () {
-    if (info.score() <= 5 && !(bossSpawned)) {
-        spawnEnemy()
-    }
-})
-game.onUpdateInterval(2000, function () {
     if (bossSpawned) {
         bossAttackAnimation()
         bossAttack()
+    }
+})
+game.onUpdateInterval(2000, function () {
+    if (info.score() <= 5 && !(bossSpawned)) {
+        spawnEnemy()
     }
 })
 game.onUpdate(function () {
