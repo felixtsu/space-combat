@@ -29,7 +29,16 @@ f b b b 1 1 1 1 1 1 1 1 b b b b b c c c c c c c b b c f . . . .
     bossInvulnerable = false
 }
 sprites.onOverlap(SpriteKind.Player, SpriteKind.EnemyProjectile, function (sprite, otherSprite) {
-	
+    damageToPlayer()
+})
+function damageToPlayer () {
+    scene.cameraShake(4, 500)
+    spritelives.ghostModeFor(aircraft, 1000)
+    aircraft.startEffect(effects.fire, 500)
+    info.changeLifeBy(-1)
+}
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Boss, function (sprite, otherSprite) {
+    damageToPlayer()
 })
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, otherSprite) {
     otherSprite.startEffect(effects.spray, 200)
@@ -87,6 +96,9 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
 . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . 
 `, aircraft, 80, 0)
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
+    damageToPlayer()
 })
 function bossAttackAnimation () {
     animation.runImageAnimation(
