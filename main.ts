@@ -2,6 +2,8 @@ namespace SpriteKind {
     export const Boss = SpriteKind.create()
     export const EnemyProjectile = SpriteKind.create()
     export const Meteor = SpriteKind.create()
+    export const PowerUp = SpriteKind.create()
+    export const EnemyTeamLeader = SpriteKind.create()
 }
 function spawnBoss () {
     boss = sprites.create(img`
@@ -39,6 +41,28 @@ function damageToPlayer () {
 sprites.onOverlap(SpriteKind.Player, SpriteKind.EnemyProjectile, function (sprite, otherSprite) {
     damageToPlayer()
 })
+function dropPowerUp (enemy: Sprite) {
+    powerUp = sprites.create(img`
+. . . . . . . . . . . . . . . . 
+. . . . . 9 9 9 9 9 9 9 . . . . 
+. . . . 9 9 9 9 9 9 9 9 9 . . . 
+. . . 9 9 9 1 1 1 1 1 9 9 9 . . 
+. . 9 9 9 1 1 1 1 1 1 1 9 9 9 . 
+. . 9 9 9 1 1 9 9 9 1 1 9 9 9 . 
+. . 9 9 9 1 1 9 9 9 1 1 9 9 9 . 
+. . 9 9 9 1 1 1 1 1 1 1 9 9 9 . 
+. . 9 9 9 1 1 1 1 1 1 9 9 9 9 . 
+. . 9 9 9 1 1 9 9 9 9 9 9 9 9 . 
+. . 9 9 9 1 1 9 9 9 9 9 9 9 9 . 
+. . . 9 9 9 1 9 9 9 9 9 9 9 . . 
+. . . . 9 9 9 9 9 9 9 9 9 . . . 
+. . . . . 9 9 9 9 9 9 9 . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+`, SpriteKind.PowerUp)
+    powerUp.setPosition(enemy.x, enemy.y)
+    powerUp.lifespan = 2000
+}
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Boss, function (sprite, otherSprite) {
     damageToPlayer()
 })
@@ -54,6 +78,10 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, othe
             bossAngerAttack()
         }
     }
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.PowerUp, function (sprite, otherSprite) {
+    weaponLevel += 1
+    otherSprite.destroy()
 })
 function moveBoss () {
     if (boss.x > 150) {
@@ -73,7 +101,7 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, oth
     otherSprite.startEffect(effects.ashes, 200)
     sprite.destroy()
     sprites.changeDataNumberBy(otherSprite, "hp", -1)
-    cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / 3 * 100, otherSprite)
+    cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / 2 * 100, otherSprite)
     if (sprites.readDataNumber(otherSprite, "hp") == 0) {
         info.changeScoreBy(1)
         otherSprite.destroy()
@@ -98,6 +126,68 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
 . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . 
 `, aircraft, 80, 0)
+    if (weaponLevel >= 1) {
+        projectile = sprites.createProjectileFromSprite(img`
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . 1 . . . . . . . . 
+. . . . . . 1 1 1 . . . . . . . 
+. . . . . . . 1 . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+`, aircraft, 80, 0)
+        projectile.y += -4
+    }
+    if (weaponLevel >= 2) {
+        projectile = sprites.createProjectileFromSprite(img`
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . 1 . . . . . . . . 
+. . . . . . 1 1 1 . . . . . . . 
+. . . . . . . 1 . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+`, aircraft, 80, 40)
+        projectile = sprites.createProjectileFromSprite(img`
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . 1 . . . . . . . . 
+. . . . . . 1 1 1 . . . . . . . 
+. . . . . . . 1 . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+`, aircraft, 80, -40)
+    }
+})
+sprites.onDestroyed(SpriteKind.Enemy, function (sprite) {
+    sprites.changeDataNumberBy(sprites.readDataSprite(sprite, "teamLeader"), "teamMembers", -1)
 })
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
     damageToPlayer()
@@ -212,6 +302,16 @@ function bossAttackAnimation () {
     false
     )
 }
+sprites.onOverlap(SpriteKind.Projectile, SpriteKind.EnemyTeamLeader, function (sprite, otherSprite) {
+    otherSprite.startEffect(effects.ashes, 200)
+    sprite.destroy()
+    sprites.changeDataNumberBy(otherSprite, "hp", -1)
+    cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / 3 * 100, otherSprite)
+    if (sprites.readDataNumber(otherSprite, "hp") == 0) {
+        info.changeScoreBy(1)
+        otherSprite.destroy()
+    }
+})
 function bossAttack () {
     teethSprite = sprites.createProjectileFromSprite(img`
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -234,7 +334,28 @@ function bossAttack () {
     teethSprite.setKind(SpriteKind.EnemyProjectile)
 }
 function spawnEnemy () {
-    newEnemy = sprites.create(img`
+    offset = -16
+    y_offset = Math.randomRange(10, 110)
+    newEnemyTeamLeader = sprites.create(img`
+. . f f f . . . . . . . . f f f 
+. f f c c . . . . . . f c b b c 
+f f c c . . . . . . f c b b c . 
+f c f c . . . . . . f b c c c . 
+f f f c c . c c . f c b b c c . 
+f f c 3 c c 3 c c f b c b b c . 
+f f b 3 b c 3 b c f b c c b c . 
+. c b b b b b b c b b c c c . . 
+. c 1 b b b 1 b b c c c c . . . 
+c b b b b b b b b b c c . . . . 
+c b c b b b c b b b b f . . . . 
+f b 1 f f f 1 b b b b f c . . . 
+f b b b b b b b b b b f c c . . 
+. f b b b b b b b b c f . . . . 
+. . f b b b b b b c f . . . . . 
+. . . f f f f f f f . . . . . . 
+`, SpriteKind.EnemyTeamLeader)
+    for (let index = 0; index < 2; index++) {
+        newEnemy = sprites.create(img`
 . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -260,11 +381,20 @@ function spawnEnemy () {
 . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . 
 `, SpriteKind.Enemy)
-    newEnemy.setFlag(SpriteFlag.AutoDestroy, true)
-    newEnemy.setPosition(140, Math.randomRange(10, 110))
-    newEnemy.setVelocity(-50, 0)
-    sprites.setDataNumber(newEnemy, "hp", 3)
-    cubicbird.displayHitPointBar(sprites.readDataNumber(newEnemy, "hp") / 3 * 100, newEnemy)
+        newEnemy.setFlag(SpriteFlag.AutoDestroy, true)
+        newEnemy.setPosition(150 + offset, y_offset)
+        newEnemy.setVelocity(-50, 0)
+        sprites.setDataNumber(newEnemy, "hp", 2)
+        cubicbird.displayHitPointBar(sprites.readDataNumber(newEnemy, "hp") / 2 * 100, newEnemy)
+        sprites.setDataSprite(newEnemy, "teamLeader", newEnemyTeamLeader)
+        offset += 16
+    }
+    newEnemyTeamLeader.setFlag(SpriteFlag.AutoDestroy, true)
+    newEnemyTeamLeader.setPosition(150 + offset, y_offset)
+    newEnemyTeamLeader.setVelocity(-50, 0)
+    sprites.setDataNumber(newEnemyTeamLeader, "hp", 3)
+    sprites.setDataNumber(newEnemyTeamLeader, "teamMembers", 2)
+    cubicbird.displayHitPointBar(sprites.readDataNumber(newEnemyTeamLeader, "hp") / 3 * 100, newEnemyTeamLeader)
 }
 function bossNormalAnimation () {
     animation.runImageAnimation(
@@ -342,6 +472,11 @@ f b b b 1 1 1 1 f f 1 b c b c b b b c c c c c c c b b b c f . .
     true
     )
 }
+sprites.onDestroyed(SpriteKind.EnemyTeamLeader, function (sprite) {
+    if (sprites.readDataNumber(sprite, "teamMembers") == 0) {
+        dropPowerUp(sprite)
+    }
+})
 function bossAngerAttack () {
     bossInvulnerable = true
     bossAttackAnimation()
@@ -354,13 +489,19 @@ function bossAngerAttack () {
 let bgIndex = 0
 let meteor: Sprite = null
 let newEnemy: Sprite = null
+let newEnemyTeamLeader: Sprite = null
+let y_offset = 0
+let offset = 0
 let teethSprite: Sprite = null
 let projectile: Sprite = null
+let powerUp: Sprite = null
 let bossInvulnerable = false
 let boss: Sprite = null
 let aircraft: Sprite = null
 let bossMaxHp = 0
 let bossSpawned = false
+let weaponLevel = 0
+weaponLevel = 0
 bossSpawned = false
 bossMaxHp = 20
 scene.setBackgroundImage(img`
@@ -515,7 +656,7 @@ game.onUpdateInterval(2000, function () {
     }
 })
 game.onUpdateInterval(2000, function () {
-    if (info.score() <= 5 && !(bossSpawned)) {
+    if (info.score() <= 15 && !(bossSpawned)) {
         spawnEnemy()
     }
 })
@@ -543,7 +684,7 @@ c c b a a a a b 6 b b a b b a .
     meteor.setKind(SpriteKind.Meteor)
 })
 game.onUpdate(function () {
-    if (info.score() == 5 && !(bossSpawned)) {
+    if (info.score() == 15 && !(bossSpawned)) {
         spawnBoss()
     }
 })
