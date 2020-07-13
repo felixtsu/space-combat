@@ -32,6 +32,9 @@ f b b b 1 1 1 1 1 1 1 1 b b b b b c c c c c c c b b c f . . . .
     bossInvulnerable = false
     cubicbird.displayHitPointBar(sprites.readDataNumber(boss, "hp") / bossMaxHp * 100)
 }
+sprites.onDestroyed(SpriteKind.Boss, function (sprite) {
+    game.over(true)
+})
 function damageToPlayer () {
     scene.cameraShake(4, 500)
     spritelives.ghostModeFor(aircraft, 1000)
@@ -66,14 +69,41 @@ function dropPowerUp (enemy: Sprite) {
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Boss, function (sprite, otherSprite) {
     damageToPlayer()
 })
+function introSaving () {
+    if (!(blockSettings.exists("AquaWarInSpace.V1"))) {
+        blockSettings.writeNumber("AquaWarInSpace.V1", 1)
+        blockSettings.writeNumber("weaponAttack", 1)
+        blockSettings.writeNumber("startLives", 3)
+        blockSettings.writeNumber("scoreSum", 0)
+        blockSettings.writeNumber("nextLevelScore", 100)
+    }
+    game.showLongText("当前武器系统等级:" + blockSettings.readNumber("weaponAttack") + "当前飞船护甲:" + blockSettings.readNumber("startLives"), DialogLayout.Bottom)
+    weaponAttack = blockSettings.readNumber("weaponAttack")
+    startLives = blockSettings.readNumber("startLives")
+}
+function handleGameOver () {
+    blockSettings.writeNumber("scoreSum", blockSettings.readNumber("scoreSum") + info.score())
+    game.showLongText("本次得分:" + info.score() + "累计得分:" + blockSettings.readNumber("scoreSum"), DialogLayout.Bottom)
+    if (blockSettings.readNumber("scoreSum") >= blockSettings.readNumber("nextLevelScore")) {
+        game.showLongText("你的贡献让飞船升级了！", DialogLayout.Bottom)
+        blockSettings.writeNumber("nextLevelScore", blockSettings.readNumber("nextLevelScore") * 2)
+        blockSettings.writeNumber("weaponAttack", blockSettings.readNumber("weaponAttack") * 2)
+        blockSettings.writeNumber("startLives", blockSettings.readNumber("startLives") + 1)
+    } else {
+        game.showLongText("你让飞船获得" + info.score() + "经验，距离下一等级还要" + (blockSettings.readNumber("nextLevelScore") - blockSettings.readNumber("scoreSum")) + "分数", DialogLayout.Bottom)
+    }
+    game.showLongText("当前武器系统等级:" + blockSettings.readNumber("weaponAttack") + "当前飞船护甲:" + blockSettings.readNumber("startLives"), DialogLayout.Bottom)
+    game.over(false)
+}
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, otherSprite) {
+    info.changeScoreBy(1)
     otherSprite.startEffect(effects.spray, 200)
     sprite.destroy()
     if (!(bossInvulnerable)) {
-        sprites.changeDataNumberBy(otherSprite, "hp", -1)
+        sprites.changeDataNumberBy(otherSprite, "hp", 0 - weaponAttack)
         cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / bossMaxHp * 100)
         if (sprites.readDataNumber(otherSprite, "hp") == 0) {
-            game.over(true)
+            otherSprite.destroy(effects.disintegrate, 2000)
         } else if (sprites.readDataNumber(boss, "hp") % 3 == 1) {
             bossAngerAttack()
         }
@@ -477,6 +507,9 @@ sprites.onDestroyed(SpriteKind.EnemyTeamLeader, function (sprite) {
         dropPowerUp(sprite)
     }
 })
+info.onLifeZero(function () {
+    handleGameOver()
+})
 function bossAngerAttack () {
     bossInvulnerable = true
     bossAttackAnimation()
@@ -494,16 +527,20 @@ let y_offset = 0
 let offset = 0
 let teethSprite: Sprite = null
 let projectile: Sprite = null
+let weaponAttack = 0
 let powerUp: Sprite = null
 let bossInvulnerable = false
 let boss: Sprite = null
+let startLives = 0
 let aircraft: Sprite = null
 let bossMaxHp = 0
 let bossSpawned = false
 let weaponLevel = 0
+info.setScore(0)
+introSaving()
 weaponLevel = 0
 bossSpawned = false
-bossMaxHp = 20
+bossMaxHp = 10000
 scene.setBackgroundImage(img`
 f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f 
 f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f 
@@ -647,7 +684,7 @@ aircraft = sprites.create(img`
 controller.moveSprite(aircraft, 50, 50)
 aircraft.setPosition(15, 20)
 aircraft.setFlag(SpriteFlag.StayInScreen, true)
-info.setLife(3)
+info.setLife(startLives)
 let list = [sprites.space.spaceSmallAsteroid0, sprites.space.spaceSmallAsteroid1, sprites.space.spaceSmallAsteroid2, sprites.space.spaceAsteroid0, sprites.space.spaceAsteroid1, sprites.space.spaceAsteroid3]
 game.onUpdateInterval(2000, function () {
     if (bossSpawned) {

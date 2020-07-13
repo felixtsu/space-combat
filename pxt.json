@@ -1,11 +1,12 @@
 {
-    "name": "AquaWarInSpace",
+    "name": "AquaWarInSpace-积累升级版.2020.7.12.tag",
     "dependencies": {
         "device": "*",
         "animation": "*",
         "arcade-sprite-data": "github:microsoft/arcade-sprite-data#v0.0.5",
         "spritelives": "github:felixtsu/pxt-spritelife#v0.1.0",
-        "cubicbird-helper-blocks": "github:felixtsu/cubicbird-helper-blocks#v0.2.1"
+        "cubicbird-helper-blocks": "github:felixtsu/cubicbird-helper-blocks#v0.2.1",
+        "settings-blocks": "github:microsoft/pxt-settings-blocks#v1.0.0"
     },
     "description": "",
     "files": [
