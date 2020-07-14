@@ -32,8 +32,11 @@ f b b b 1 1 1 1 1 1 1 1 b b b b b c c c c c c c b b c f . . . .
     bossInvulnerable = false
     cubicbird.displayHitPointBar(sprites.readDataNumber(boss, "hp") / bossMaxHp * 100)
 }
+attackEffect.onLaserHit(SpriteKind.Enemy, function (sprite) {
+    sprite.destroy()
+})
 sprites.onDestroyed(SpriteKind.Boss, function (sprite) {
-    game.over(true)
+    game.over()
 })
 function damageToPlayer () {
     scene.cameraShake(4, 500)
@@ -66,6 +69,9 @@ function dropPowerUp (enemy: Sprite) {
     powerUp.setPosition(enemy.x, enemy.y)
     powerUp.lifespan = 2000
 }
+attackEffect.onLaserHit(SpriteKind.EnemyTeamLeader, function (sprite) {
+    sprite.destroy()
+})
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Boss, function (sprite, otherSprite) {
     damageToPlayer()
 })
@@ -93,7 +99,7 @@ function handleGameOver () {
         game.showLongText("你让飞船获得" + info.score() + "经验，距离下一等级还要" + (blockSettings.readNumber("nextLevelScore") - blockSettings.readNumber("scoreSum")) + "分数", DialogLayout.Bottom)
     }
     game.showLongText("当前武器系统等级:" + blockSettings.readNumber("weaponAttack") + "当前飞船护甲:" + blockSettings.readNumber("startLives"), DialogLayout.Bottom)
-    game.over(false)
+    game.over()
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, otherSprite) {
     info.changeScoreBy(1)
@@ -108,6 +114,14 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, othe
             bossAngerAttack()
         }
     }
+})
+controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
+    attackEffect.laserAttack(
+    aircraft,
+    attackEffect.LaserAttackDirection.RIGHT,
+    40,
+    2000
+    )
 })
 sprites.onOverlap(SpriteKind.Player, SpriteKind.PowerUp, function (sprite, otherSprite) {
     weaponLevel += 1
@@ -133,7 +147,6 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, oth
     sprites.changeDataNumberBy(otherSprite, "hp", -1)
     cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / 2 * 100, otherSprite)
     if (sprites.readDataNumber(otherSprite, "hp") == 0) {
-        info.changeScoreBy(1)
         otherSprite.destroy()
     }
 })
@@ -217,6 +230,7 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     }
 })
 sprites.onDestroyed(SpriteKind.Enemy, function (sprite) {
+    info.changeScoreBy(1)
     sprites.changeDataNumberBy(sprites.readDataSprite(sprite, "teamLeader"), "teamMembers", -1)
 })
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
@@ -338,7 +352,6 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.EnemyTeamLeader, function (s
     sprites.changeDataNumberBy(otherSprite, "hp", -1)
     cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / 3 * 100, otherSprite)
     if (sprites.readDataNumber(otherSprite, "hp") == 0) {
-        info.changeScoreBy(1)
         otherSprite.destroy()
     }
 })
@@ -503,6 +516,7 @@ f b b b 1 1 1 1 f f 1 b c b c b b b c c c c c c c b b b c f . .
     )
 }
 sprites.onDestroyed(SpriteKind.EnemyTeamLeader, function (sprite) {
+    info.changeScoreBy(1)
     if (sprites.readDataNumber(sprite, "teamMembers") == 0) {
         dropPowerUp(sprite)
     }
@@ -519,6 +533,19 @@ function bossAngerAttack () {
     boss.setVelocity(30, 30)
     bossNormalAnimation()
 }
+attackEffect.onLaserHit(SpriteKind.Boss, function (sprite) {
+    info.changeScoreBy(1)
+    sprite.startEffect(effects.spray, 200)
+    if (!(bossInvulnerable)) {
+        sprites.changeDataNumberBy(sprite, "hp", 3 * (0 - weaponAttack))
+        cubicbird.displayHitPointBar(sprites.readDataNumber(sprite, "hp") / bossMaxHp * 100)
+        if (sprites.readDataNumber(sprite, "hp") == 0) {
+            sprite.destroy(effects.disintegrate, 2000)
+        } else if (sprites.readDataNumber(sprite, "hp") % 3 == 1) {
+            bossAngerAttack()
+        }
+    }
+})
 let bgIndex = 0
 let meteor: Sprite = null
 let newEnemy: Sprite = null
@@ -685,7 +712,7 @@ controller.moveSprite(aircraft, 50, 50)
 aircraft.setPosition(15, 20)
 aircraft.setFlag(SpriteFlag.StayInScreen, true)
 info.setLife(startLives)
-let list = [sprites.space.spaceSmallAsteroid0, sprites.space.spaceSmallAsteroid1, sprites.space.spaceSmallAsteroid2, sprites.space.spaceAsteroid0, sprites.space.spaceAsteroid1, sprites.space.spaceAsteroid3]
+let meteorImages = [sprites.space.spaceSmallAsteroid0, sprites.space.spaceSmallAsteroid1, sprites.space.spaceSmallAsteroid2, sprites.space.spaceAsteroid0, sprites.space.spaceAsteroid1, sprites.space.spaceAsteroid3]
 game.onUpdateInterval(2000, function () {
     if (bossSpawned) {
         bossAttackAnimation()
@@ -716,7 +743,7 @@ c c b a a a a b 6 b b a b b a .
 . . . . c b b a a 6 b c . . . . 
 . . . . . . b 6 6 c c . . . . . 
 `, Math.randomRange(-60, -20), 0)
-    meteor.setImage(list[Math.randomRange(0, 5)])
+    meteor.setImage(meteorImages[Math.randomRange(0, 5)])
     meteor.y = Math.randomRange(10, 110)
     meteor.setKind(SpriteKind.Meteor)
 })
