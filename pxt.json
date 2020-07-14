@@ -7,7 +7,8 @@
         "spritelives": "github:felixtsu/pxt-spritelife#v0.1.0",
         "cubicbird-helper-blocks": "github:felixtsu/cubicbird-helper-blocks#v0.2.1",
         "settings-blocks": "github:microsoft/pxt-settings-blocks#v1.0.0",
-        "attack-effect": "github:felixtsu/pxt-arcade-attack-effect#v0.1.2"
+        "attack-effect": "github:felixtsu/pxt-arcade-attack-effect#v0.1.2",
+        "pxt-status-bar": "github:jwunderl/pxt-status-bar#v0.2.9"
     },
     "description": "",
     "files": [

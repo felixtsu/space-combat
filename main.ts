@@ -102,6 +102,7 @@ function handleGameOver () {
     game.over()
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, otherSprite) {
+    statusbar.value += 5
     info.changeScoreBy(1)
     otherSprite.startEffect(effects.spray, 200)
     sprite.destroy()
@@ -116,12 +117,15 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, othe
     }
 })
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    attackEffect.laserAttack(
-    aircraft,
-    attackEffect.LaserAttackDirection.RIGHT,
-    40,
-    2000
-    )
+    if (statusbar.value >= 50) {
+        attackEffect.laserAttack(
+        aircraft,
+        attackEffect.LaserAttackDirection.RIGHT,
+        40,
+        2000
+        )
+        statusbar.value = 0
+    }
 })
 sprites.onOverlap(SpriteKind.Player, SpriteKind.PowerUp, function (sprite, otherSprite) {
     weaponLevel += 1
@@ -142,6 +146,7 @@ function moveBoss () {
     }
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
+    statusbar.value += 5
     otherSprite.startEffect(effects.ashes, 200)
     sprite.destroy()
     sprites.changeDataNumberBy(otherSprite, "hp", -1)
@@ -347,6 +352,7 @@ function bossAttackAnimation () {
     )
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.EnemyTeamLeader, function (sprite, otherSprite) {
+    statusbar.value += 5
     otherSprite.startEffect(effects.ashes, 200)
     sprite.destroy()
     sprites.changeDataNumberBy(otherSprite, "hp", -1)
@@ -355,6 +361,15 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.EnemyTeamLeader, function (s
         otherSprite.destroy()
     }
 })
+function initPowerGauge () {
+    statusbar = statusbars.create(50, 4, StatusBarKind.Energy)
+    statusbar.positionDirection(CollisionDirection.Top)
+    statusbar.max = 50
+    statusbar.value = 0
+    statusbar.setStatusBarFlag(StatusBarFlag.SmoothTransition, false)
+    statusbar.setColor(9, 1)
+    statusbar.setBarBorder(1, 1)
+}
 function bossAttack () {
     teethSprite = sprites.createProjectileFromSprite(img`
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -554,6 +569,7 @@ let y_offset = 0
 let offset = 0
 let teethSprite: Sprite = null
 let projectile: Sprite = null
+let statusbar: StatusBarSprite = null
 let weaponAttack = 0
 let powerUp: Sprite = null
 let bossInvulnerable = false
@@ -712,6 +728,7 @@ controller.moveSprite(aircraft, 50, 50)
 aircraft.setPosition(15, 20)
 aircraft.setFlag(SpriteFlag.StayInScreen, true)
 info.setLife(startLives)
+initPowerGauge()
 let meteorImages = [sprites.space.spaceSmallAsteroid0, sprites.space.spaceSmallAsteroid1, sprites.space.spaceSmallAsteroid2, sprites.space.spaceAsteroid0, sprites.space.spaceAsteroid1, sprites.space.spaceAsteroid3]
 game.onUpdateInterval(2000, function () {
     if (bossSpawned) {
