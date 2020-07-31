@@ -1,23 +1,30 @@
 {
     "name": "AquaWarInSpace-积累升级版.2020.7.12.tag",
+    "description": "",
     "dependencies": {
         "device": "*",
         "animation": "*",
-        "arcade-sprite-data": "github:microsoft/arcade-sprite-data#v0.0.5",
+        "arcade-sprite-data": "github:microsoft/arcade-sprite-data#v0.0.6",
         "spritelives": "github:felixtsu/pxt-spritelife#v0.1.0",
         "cubicbird-helper-blocks": "github:felixtsu/cubicbird-helper-blocks#v0.2.1",
         "settings-blocks": "github:microsoft/pxt-settings-blocks#v1.0.0",
         "attack-effect": "github:felixtsu/pxt-arcade-attack-effect#v0.1.2",
         "pxt-status-bar": "github:jwunderl/pxt-status-bar#v0.2.9"
     },
-    "description": "",
     "files": [
         "main.blocks",
         "main.ts",
         "README.md"
     ],
-    "preferredEditor": "blocksprj",
     "testFiles": [
         "test.ts"
-    ]
+    ],
+    "targetVersions": {
+        "target": "1.0.16",
+        "targetId": "arcade"
+    },
+    "supportedTargets": [
+        "arcade"
+    ],
+    "preferredEditor": "blocksprj"
 }
