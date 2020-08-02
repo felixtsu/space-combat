@@ -41,6 +41,38 @@ function damageToPlayer () {
     aircraft.startEffect(effects.fire, 500)
     info.changeLifeBy(-1)
 }
+function circlingEnemies (num: number) {
+    if (num > 0) {
+        circlingAttackSprite = sprites.create(img`
+            . . . . . f c c c c f . . . . . 
+            . . c c f b b 3 3 b b f c c . . 
+            . c b 3 3 b b c c b b 3 3 b c . 
+            . f 3 c c c b c c b c c c 3 f . 
+            f c b b c c b c c b c c b b c f 
+            c 3 c c b c c c c c c b c c 3 c 
+            c 3 c c c c c c c c c c c c 3 c 
+            . f b b c c c c c c c c b b f . 
+            . . f b b c c c c c c b b f . . 
+            . . c c c f f f f f f c c c . . 
+            . c 3 f f f f f f f f f f 3 c . 
+            c 3 f f f f f f f f f f f f 3 c 
+            f 3 c c f f f f f f f f c c 3 f 
+            f b 3 c b b f b b f b b c 3 b f 
+            . c b b 3 3 b 3 3 b 3 3 b b c . 
+            . . f f f f f f f f f f f f . . 
+            `, SpriteKind.Enemy)
+        cubicbird.circleSpriteAt(
+        circlingAttackSprite,
+        aircraft.x,
+        aircraft.y,
+        20,
+        30
+        )
+        game.runOnUpdateAfter(1000, function () {
+            circlingEnemies(num - 1)
+        })
+    }
+}
 attackEffect.onLaserHit(SpriteKind.Enemy, function (sprite) {
     sprite.destroy()
 })
@@ -572,6 +604,7 @@ let weaponAttack = 0
 let projectile: Sprite = null
 let powerUp: Sprite = null
 let statusbar: StatusBarSprite = null
+let circlingAttackSprite: Sprite = null
 let bossInvulnerable = false
 let boss: Sprite = null
 let startLives = 0
@@ -755,7 +788,11 @@ game.onUpdateInterval(2000, function () {
 })
 game.onUpdateInterval(2000, function () {
     if (info.score() <= 15 && !(bossSpawned)) {
-        spawnEnemy()
+        if (Math.percentChance(80)) {
+            circlingEnemies(4)
+        } else {
+            spawnEnemy()
+        }
     }
 })
 game.onUpdateInterval(2000, function () {
