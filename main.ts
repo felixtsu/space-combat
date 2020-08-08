@@ -4,6 +4,7 @@ namespace SpriteKind {
     export const Meteor = SpriteKind.create()
     export const PowerUp = SpriteKind.create()
     export const EnemyTeamLeader = SpriteKind.create()
+    export const Fish = SpriteKind.create()
 }
 function spawnBoss () {
     boss = sprites.create(img`
@@ -27,10 +28,10 @@ function spawnBoss () {
     bossNormalAnimation()
     boss.setPosition(140, randint(10, 110))
     boss.setVelocity(30, 30)
-    sprites.setDataNumber(boss, "hp", bossMaxHp)
-    bossSpawned = true
+    sprites.setDataNumber(boss, "hp", sharkMaxHp)
+    sharkSpawned = true
     bossInvulnerable = false
-    cubicbird.displayHitPointBar(sprites.readDataNumber(boss, "hp") / bossMaxHp * 100)
+    cubicbird.displayHitPointBar(sprites.readDataNumber(boss, "hp") / sharkMaxHp * 100)
 }
 sprites.onOverlap(SpriteKind.Player, SpriteKind.EnemyProjectile, function (sprite, otherSprite) {
     damageToPlayer()
@@ -87,6 +88,13 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
         statusbar.value = 0
     }
 })
+function startSecondBoss () {
+    fishFightStarted = true
+    fishHp = fishTotalHp
+    fishHpNextThreshold = fishTotalHp / 2
+    cubicbird.displayHitPointBar(fishHp / fishTotalHp * 100)
+    spawnFish()
+}
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     projectile = sprites.createProjectileFromSprite(img`
         . . . . . . . . . . . . . . . . 
@@ -178,7 +186,7 @@ function introSaving () {
     weaponAttack = blockSettings.readNumber("weaponAttack")
     startLives = blockSettings.readNumber("startLives")
 }
-function handleGameOver () {
+function handleGameOver (win: boolean) {
     blockSettings.writeNumber("scoreSum", blockSettings.readNumber("scoreSum") + info.score())
     game.showLongText("本次得分:" + info.score() + "累计得分:" + blockSettings.readNumber("scoreSum"), DialogLayout.Bottom)
     if (blockSettings.readNumber("scoreSum") >= blockSettings.readNumber("nextLevelScore")) {
@@ -190,7 +198,7 @@ function handleGameOver () {
         game.showLongText("你让飞船获得" + info.score() + "经验，距离下一等级还要" + (blockSettings.readNumber("nextLevelScore") - blockSettings.readNumber("scoreSum")) + "分数", DialogLayout.Bottom)
     }
     game.showLongText("当前武器系统等级:" + blockSettings.readNumber("weaponAttack") + "当前飞船护甲:" + blockSettings.readNumber("startLives"), DialogLayout.Bottom)
-    game.over(false)
+    game.over(win)
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, otherSprite) {
     statusbar.value += 5
@@ -199,7 +207,7 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, othe
     sprite.destroy()
     if (!(bossInvulnerable)) {
         sprites.changeDataNumberBy(otherSprite, "hp", 0 - weaponAttack)
-        cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / bossMaxHp * 100)
+        cubicbird.displayHitPointBar(sprites.readDataNumber(otherSprite, "hp") / sharkMaxHp * 100)
         if (sprites.readDataNumber(otherSprite, "hp") <= 0) {
             otherSprite.destroy(effects.disintegrate, 2000)
         } else if (sprites.readDataNumber(boss, "hp") % 3 == 1) {
@@ -207,8 +215,25 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Boss, function (sprite, othe
         }
     }
 })
+sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Fish, function (sprite, otherSprite) {
+    statusbar.value += 5
+    info.changeScoreBy(1)
+    sprite.destroy()
+    damageToFish(otherSprite, weaponAttack)
+})
 sprites.onDestroyed(SpriteKind.Boss, function (sprite) {
-    game.over(false, effects.confetti)
+    startSecondBoss()
+    sharkSpawned = false
+})
+attackEffect.onLaserHit(SpriteKind.Fish, function (sprite) {
+    info.changeScoreBy(1)
+    sprite.startEffect(effects.spray, 200)
+    if (!(bossInvulnerable)) {
+        damageToFish(sprite, weaponAttack / 2)
+    }
+})
+attackEffect.onExplosionHit(SpriteKind.Player, function (sprite) {
+    damageToPlayer()
 })
 sprites.onOverlap(SpriteKind.Player, SpriteKind.PowerUp, function (sprite, otherSprite) {
     weaponLevel += 1
@@ -219,7 +244,7 @@ attackEffect.onLaserHit(SpriteKind.Boss, function (sprite) {
     sprite.startEffect(effects.spray, 200)
     if (!(bossInvulnerable)) {
         sprites.changeDataNumberBy(sprite, "hp", 3 * (0 - weaponAttack))
-        cubicbird.displayHitPointBar(sprites.readDataNumber(sprite, "hp") / bossMaxHp * 100)
+        cubicbird.displayHitPointBar(sprites.readDataNumber(sprite, "hp") / sharkMaxHp * 100)
         if (sprites.readDataNumber(sprite, "hp") <= 0) {
             sprite.destroy(effects.disintegrate, 2000)
         } else if (sprites.readDataNumber(sprite, "hp") % 3 == 1) {
@@ -230,6 +255,40 @@ attackEffect.onLaserHit(SpriteKind.Boss, function (sprite) {
 attackEffect.onLaserHit(SpriteKind.EnemyTeamLeader, function (sprite) {
     sprite.destroy()
 })
+function fishAttack (fish: Sprite) {
+    if (fish != undefined) {
+        bubbleSprite = sprites.createProjectileFromSprite(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . 8 8 8 8 8 . . . . . . 
+            . . . . 8 8 9 9 9 8 8 . . . . . 
+            . . . 8 8 1 1 1 9 9 8 8 . . . . 
+            . . . 8 1 1 9 9 9 9 9 8 . . . . 
+            . . . 8 9 9 9 9 9 9 9 8 . . . . 
+            . . . 8 9 9 9 9 9 9 9 8 . . . . 
+            . . . 8 8 9 9 9 9 9 8 8 . . . . 
+            . . . . 8 8 9 9 9 8 8 . . . . . 
+            . . . . . 8 8 8 8 8 . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, fish, -80, 0)
+        bubbleSprite.setKind(SpriteKind.EnemyProjectile)
+        game.runOnUpdateAfter(2000, function () {
+            fishAttack(fish)
+        })
+    }
+}
+function launchSuicideAttack () {
+    if (allSuicideAttackFish.length > 0) {
+        cubicbird.moveTowards(allSuicideAttackFish.shift(), aircraft, 200)
+        game.runOnUpdateAfter(1000, function () {
+            launchSuicideAttack()
+        })
+    }
+}
 sprites.onDestroyed(SpriteKind.EnemyTeamLeader, function (sprite) {
     info.changeScoreBy(1)
     if (sprites.readDataNumber(sprite, "teamMembers") == 0) {
@@ -361,8 +420,19 @@ function bossAttackAnimation () {
     )
 }
 info.onLifeZero(function () {
-    handleGameOver()
+    handleGameOver(false)
 })
+function moveAllFish () {
+    allFish = sprites.allOfKind(SpriteKind.Fish)
+    for (let value of allFish) {
+        if (value.y < 20) {
+            value.vy = 60
+        }
+        if (value.y > 100) {
+            value.vy = -60
+        }
+    }
+}
 function initPowerGauge () {
     statusbar = statusbars.create(50, 4, StatusBarKind.Energy)
     statusbar.positionDirection(CollisionDirection.Top)
@@ -372,6 +442,12 @@ function initPowerGauge () {
     statusbar.setColor(9, 1)
     statusbar.setBarBorder(1, 1)
 }
+sprites.onDestroyed(SpriteKind.Fish, function (sprite) {
+    allFish = sprites.allOfKind(SpriteKind.Fish)
+    if (allFish.length == 1) {
+        handleGameOver(true)
+    }
+})
 function bossAttack () {
     teethSprite = sprites.createProjectileFromSprite(img`
         . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -536,6 +612,51 @@ function bossNormalAnimation () {
     true
     )
 }
+function damageToFish (fish: Sprite, damage: number) {
+    fish.startEffect(effects.coolRadial, 200)
+    fishHp += 0 - damage
+    cubicbird.displayHitPointBar(fishHp / fishTotalHp * 100)
+    if (fishHp <= 0) {
+        suicideAttackStarted = true
+        allSuicideAttackFish = sprites.allOfKind(SpriteKind.Fish)
+        // all set to ghost, don't take any further dmg
+        for (let value of allSuicideAttackFish) {
+            value.setFlag(SpriteFlag.Ghost, true)
+            value.setFlag(SpriteFlag.AutoDestroy, true)
+        }
+        launchSuicideAttack()
+    } else {
+        if (fishHp < fishHpNextThreshold) {
+            spawnFish()
+            fishHpNextThreshold = fishHpNextThreshold / 2
+        }
+    }
+}
+function spawnFish () {
+    fishSprite = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . c c c c c c . . . 
+        . . . . . . c 5 5 5 5 5 c c . . 
+        . . . . . c 5 5 5 5 5 5 5 5 c . 
+        . . . . c b b b b b b 5 5 5 c . 
+        . . . . c b b b b 1 b b c c . . 
+        . . . . c 1 1 b b 1 1 1 c . . . 
+        . . . c 1 1 1 1 b 1 1 1 c . . . 
+        . . . c 1 1 1 1 b 1 1 1 b b c c 
+        . . c c d 1 1 1 b 1 b 1 5 5 5 c 
+        . . c c d 1 c 1 1 1 b 1 b b 5 c 
+        . c c d d 1 1 1 1 1 b 1 f b 5 c 
+        f d d d 1 1 1 1 1 b b b f . c c 
+        f f f f f 1 1 1 b b 5 5 5 f . . 
+        . . . . . f f f 5 5 5 5 5 f . . 
+        . . . . . . . . f f f f f f . . 
+        `, SpriteKind.Fish)
+    fishSprite.setPosition(140, randint(10, 110))
+    fishSprite.setVelocity(0, 60)
+    game.runOnUpdateAfter(2000, function () {
+        fishAttack(fishSprite)
+    })
+}
 function bossAngerAttack () {
     bossInvulnerable = true
     bossAttackAnimation()
@@ -563,27 +684,38 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Boss, function (sprite, otherSpr
 })
 let bgIndex = 0
 let meteor: Sprite = null
+let suicideAttackFish: Sprite[] = []
+let fishSprite: Sprite = null
+let suicideAttackStarted = false
 let newEnemy: Sprite = null
 let newEnemyTeamLeader: Sprite = null
 let y_offset = 0
 let offset = 0
 let teethSprite: Sprite = null
+let allFish: Sprite[] = []
+let allSuicideAttackFish: Sprite[] = []
+let bubbleSprite: Sprite = null
 let weaponAttack = 0
 let projectile: Sprite = null
+let fishHpNextThreshold = 0
+let fishHp = 0
+let fishFightStarted = false
 let powerUp: Sprite = null
 let statusbar: StatusBarSprite = null
 let bossInvulnerable = false
 let boss: Sprite = null
 let startLives = 0
 let aircraft: Sprite = null
-let bossMaxHp = 0
-let bossSpawned = false
+let fishTotalHp = 0
+let sharkMaxHp = 0
+let sharkSpawned = false
 let weaponLevel = 0
 info.setScore(0)
 introSaving()
 weaponLevel = 0
-bossSpawned = false
-bossMaxHp = 10000
+sharkSpawned = false
+sharkMaxHp = 10000
+fishTotalHp = 2050
 scene.setBackgroundImage(img`
     f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f 
     f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f 
@@ -738,23 +870,30 @@ sprites.space.spaceAsteroid1,
 sprites.space.spaceAsteroid3
 ]
 game.onUpdate(function () {
-    if (info.score() == 15 && !(bossSpawned)) {
+    if (sharkSpawned) {
+        moveBoss()
+    }
+    if (fishFightStarted) {
+        moveAllFish()
+    }
+})
+game.onUpdate(function () {
+    if (info.score() == 15 && !(sharkSpawned)) {
         spawnBoss()
     }
 })
 game.onUpdate(function () {
-    if (bossSpawned) {
-        moveBoss()
+    if (suicideAttackStarted) {
+        suicideAttackFish = sprites.allOfKind(SpriteKind.Fish)
+        for (let value2 of suicideAttackFish) {
+            if ((aircraft.x - value2.x) * (aircraft.x - value2.x) + (aircraft.y - value2.y) * (aircraft.y - value2.y) < 400) {
+                attackEffect.explode(value2, 20, 1000)
+            }
+        }
     }
 })
 game.onUpdateInterval(2000, function () {
-    if (bossSpawned) {
-        bossAttackAnimation()
-        bossAttack()
-    }
-})
-game.onUpdateInterval(2000, function () {
-    if (info.score() <= 15 && !(bossSpawned)) {
+    if (info.score() <= 15 && !(sharkSpawned)) {
         spawnEnemy()
     }
 })
@@ -780,6 +919,12 @@ game.onUpdateInterval(2000, function () {
     meteor.setImage(meteorImages[randint(0, 5)])
     meteor.y = randint(10, 110)
     meteor.setKind(SpriteKind.Meteor)
+})
+game.onUpdateInterval(2000, function () {
+    if (sharkSpawned) {
+        bossAttackAnimation()
+        bossAttack()
+    }
 })
 game.onUpdateInterval(500, function () {
     bgIndex += 1
