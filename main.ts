@@ -34,13 +34,13 @@ function spawnBoss () {
     cubicbird.displayHitPointBar(sprites.readDataNumber(boss, "hp") / sharkMaxHp * 100)
 }
 sprites.onOverlap(SpriteKind.Player, SpriteKind.EnemyProjectile, function (sprite, otherSprite) {
-    damageToPlayer()
+    damageToPlayer(1)
 })
-function damageToPlayer () {
+function damageToPlayer (damage: number) {
     scene.cameraShake(4, 500)
     spritelives.ghostModeFor(aircraft, 1000)
     aircraft.startEffect(effects.fire, 500)
-    info.changeLifeBy(-1)
+    info.changeLifeBy(0 - 1)
 }
 attackEffect.onLaserHit(SpriteKind.Enemy, function (sprite) {
     sprite.destroy()
@@ -58,19 +58,19 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.EnemyTeamLeader, function (s
 function dropPowerUp (enemy: Sprite) {
     powerUp = sprites.create(img`
         . . . . . . . . . . . . . . . . 
-        . . . . . 9 9 9 9 9 9 9 . . . . 
-        . . . . 9 9 9 9 9 9 9 9 9 . . . 
-        . . . 9 9 9 1 1 1 1 1 9 9 9 . . 
-        . . 9 9 9 1 1 1 1 1 1 1 9 9 9 . 
-        . . 9 9 9 1 1 9 9 9 1 1 9 9 9 . 
-        . . 9 9 9 1 1 9 9 9 1 1 9 9 9 . 
-        . . 9 9 9 1 1 1 1 1 1 1 9 9 9 . 
-        . . 9 9 9 1 1 1 1 1 1 9 9 9 9 . 
-        . . 9 9 9 1 1 9 9 9 9 9 9 9 9 . 
-        . . 9 9 9 1 1 9 9 9 9 9 9 9 9 . 
-        . . . 9 9 9 1 9 9 9 9 9 9 9 . . 
-        . . . . 9 9 9 9 9 9 9 9 9 . . . 
-        . . . . . 9 9 9 9 9 9 9 . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . 9 9 9 9 9 9 . . . . . 
+        . . . . 9 9 1 1 1 1 9 9 . . . . 
+        . . . 9 9 1 1 1 1 1 1 9 9 . . . 
+        . . . 9 9 1 1 9 9 9 1 1 9 . . . 
+        . . . 9 9 1 1 9 9 9 1 1 9 . . . 
+        . . . 9 9 1 1 1 1 1 1 9 9 . . . 
+        . . . 9 9 1 1 1 1 1 9 9 9 . . . 
+        . . . 9 9 1 1 9 9 9 9 9 9 . . . 
+        . . . 9 9 1 1 9 9 9 9 9 9 . . . 
+        . . . . 9 9 1 9 9 9 9 9 . . . . 
+        . . . . . 9 9 9 9 9 9 . . . . . 
+        . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
         `, SpriteKind.PowerUp)
@@ -233,7 +233,7 @@ attackEffect.onLaserHit(SpriteKind.Fish, function (sprite) {
     }
 })
 attackEffect.onExplosionHit(SpriteKind.Player, function (sprite) {
-    damageToPlayer()
+    damageToPlayer(3)
 })
 sprites.onOverlap(SpriteKind.Player, SpriteKind.PowerUp, function (sprite, otherSprite) {
     weaponLevel += 1
@@ -626,7 +626,7 @@ function damageToFish (fish: Sprite, damage: number) {
         }
         launchSuicideAttack()
     } else {
-        if (fishHp < fishHpNextThreshold) {
+        while (fishHp < fishHpNextThreshold) {
             spawnFish()
             fishHpNextThreshold = fishHpNextThreshold / 2
         }
@@ -677,10 +677,10 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, oth
     }
 })
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
-    damageToPlayer()
+    damageToPlayer(1)
 })
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Boss, function (sprite, otherSprite) {
-    damageToPlayer()
+    damageToPlayer(1)
 })
 let bgIndex = 0
 let meteor: Sprite = null
@@ -715,7 +715,7 @@ introSaving()
 weaponLevel = 0
 sharkSpawned = false
 sharkMaxHp = 10000
-fishTotalHp = 2050
+fishTotalHp = 4100
 scene.setBackgroundImage(img`
     f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f 
     f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f f 
@@ -873,7 +873,7 @@ game.onUpdate(function () {
     if (sharkSpawned) {
         moveBoss()
     }
-    if (fishFightStarted) {
+    if (fishFightStarted && !(suicideAttackStarted)) {
         moveAllFish()
     }
 })
